@@ -9,7 +9,7 @@ console.log('3. Extract the desires features and labels as two separate tensors'
 const tf = require('@tensorflow/tfjs');
 
 async function run(){
-  const file_location = 'file://C:/Users/suw169/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data';
+  const file_location = 'file://C:/Users/kcm/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data';
 
   const house_dataset = tf.data.csv(file_location+'/kc_house_data.csv');
   const sample_house_dataset = await house_dataset.take(10);

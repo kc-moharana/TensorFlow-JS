@@ -2,7 +2,7 @@ const tf = require('@tensorflow/tfjs');
 
 console.log('Reading CSV data files');
 
-const file_location = 'file://C:/Users/suw169/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data';
+const file_location = 'file://C:/Users/kcm/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data';
 
 // ###### Just writing this code will not work, need to put inside an async function and use awit ##
 // const house_dataset = tf.data.csv(`${file_location}/kc_house_data.csv`);

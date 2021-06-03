@@ -113,7 +113,7 @@ async function test_model(model, test_feature_tensor, test_label_tensor){
 }
 
 async function load_data(){
-  const csv_url = 'file://C:/Users/suw169/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data/kc_house_data.csv';
+  const csv_url = 'file://C:/Users/kcm/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data/kc_house_data.csv';
   const CSVDataset = tf.data.csv(csv_url);
   //console.log(await CSVDataset.columnNames() );
   const data_table = CSVDataset.map(records=>({

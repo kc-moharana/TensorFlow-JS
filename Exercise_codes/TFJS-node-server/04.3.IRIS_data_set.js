@@ -46,5 +46,5 @@ async function prepare_data(csv_url){
 
 
 
-const file_location = 'file://C:/Users/suw169/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data';
+const file_location = 'file://C:/Users/kcm/Documents/GIT_repos/TensorFlow-JS/Exercise_codes/TFJS-node-server/data';
 const final_data = prepare_data(file_location+'/iris_dataset.csv'));
