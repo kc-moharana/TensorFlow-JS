@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>non_linear-Expt params</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  </head>
+  <body>
+    <script type="text/javascript">
+      // Global variables
+      let points;
+      let scaled_features,scaled_labels;
+      let train_feat, test_feat, train_labels, test_labels;
+      let model;
+      const storageID = "kc-house-price-regression";
+
+      async function plot(datapoints, feature_name, predicted_points=null){
+        const values = [datapoints.slice(0,1000)];
+        const series = ["Original"];
+        if(Array.isArray(predicted_points) ){
+          values.push(predicted_points);
+          series.push(['Predicted']);
+        }
+        tfvis.render.scatterplot(
+        {name: 'Scatter plot '+`${feature_name} vs Price`},
+        {values, series},
+        {xLabel:"Square Feet", yLabel: "Price", height: 300}
+        );
+      }
+
+      async function plotPredictionLine(){
+        const [xs, ys] = tf.tidy(()=>{
+          const normalized_xs = tf.linspace(0,1,100);
+          const normalized_ys = model.predict(normalized_xs.reshape([100,1]) );
+          // normalized_xs.print();
+          // normalized_ys.print();
+          const denormalized_xs = denormalize(normalized_xs,scaled_features.min, scaled_features.max);
+          const denormalized_ys = denormalize(normalized_ys, scaled_labels.min, scaled_labels.max);
+          return [denormalized_xs.dataSync(), denormalized_ys.dataSync() ];
+        });
+        const predicted_points = Array.from(xs).map((val, index)=>{
+          return {x:val, y: ys[index]}
+        });
+        await plot(points,"Square Feet",predicted_points);
+      }
+
+      // scale a tensor 0-1
+      function normalize_tensor(xs, input_min=null, input_max=null){
+        const min = input_min || xs.min();
+        const max = input_max || xs.max();
+        return {
+          x: xs.sub(min).div(max.sub(min)),
+          min: min,
+          max: max
+        }
+      }
+      function denormalize(tensor, min, max) {
+        const denormalisedTensor = tensor.mul(max.sub(min)).add(min);
+        return denormalisedTensor;
+      }
+
+
+
+      // TFJS functions
+      async function trainModel(model, trainFeature_tensor, trainLabelTensor){
+        const {onEpochEnd,onBatchEnd} = tfvis.show.fitCallbacks(
+          {name: "Training Performance"},
+          ['loss']
+        );
+         return model.fit(trainFeature_tensor,trainLabelTensor,
+           {
+             batchSize: 32,
+             validationSplit: 0.2,
+             epochs:100,
+             //shuffle: true,
+             callbacks:{
+               //onEpochEnd: (epoch, log)=>console.log(`Epoch ${epoch}: ${log.loss}`)
+               onEpochEnd,
+               //onBatchEnd,
+               onEpochBegin: async function(){
+                 await plotPredictionLine();
+                 const layer = model.getLayer(undefined, 0);
+                 tfvis.show.layer({ name: "Layer 1" }, layer);
+               }
+             }
+           });
+      }
+
+      function createModel(){
+        model = tf.sequential();
+        // input layer
+        model.add(tf.layers.dense({
+          units: 10,
+          useBias: true,
+          activation: 'sigmoid',  //'linear',,'sigmoid'
+          inputDim: 1,
+        }));
+        // intermediate layer
+        model.add(tf.layers.dense({
+          units: 10,
+          useBias: true,
+          activation: 'sigmoid',  //'linear',,'sigmoid'
+        }));
+        //output layer
+        model.add(tf.layers.dense({
+          units: 1,
+          useBias: true,
+          activation: 'sigmoid',  //'linear',,'sigmoid'
+        }));
+
+        //const optimizer = tf.train.sgd(0.1);
+        const optimizer = tf.train.adam();
+        model.compile({
+          loss: 'meanSquaredError',
+          optimizer,
+        });
+        return model;
+      }
+
+
+
+      // UI functions
+      async function toggle_visor(){
+        tfvis.visor().toggle();
+        if (tfvis.visor().isOpen ()){
+          document.getElementById('toggle-button').innerHTML='<i class="material-icons left blue-text">toggle_on</i>';
+        }
+        else{
+          document.getElementById('toggle-button').innerHTML='<i class="material-icons left grey-text">toggle_off</i>';
+        }
+      }
+      async function plotParams(weight, bias){
+        model.getLayer(null,0).setWeights([
+          tf.tensor2d([[weight]]),  // Kernel (m)
+          tf.tensor1d([bias])        // bias constant (c)
+        ]);
+        await plotPredictionLine();
+        const layer = model.getLayer(null,0);
+        tfvis.show.layer({name: "Layer 1"}, layer);
+
+        // plotParams(12,-5); sigmoid curve. can be sen on the `Layer 1` table as well.
+
+      }
+
+      async function train__(){
+        document.getElementById('model-status').innerHTML = 'Training model ... ';
+        const model = createModel();
+        tfvis.show.modelSummary({ name: `Model Summary` }, model);
+        //const L1 = model.getLayer(undefined, 0);
+        tfvis.show.layer({ name: `Layer 1` }, model.getLayer(undefined, 0));
+
+        const result = await trainModel(model,train_feat, train_labels);
+        const last_epoch_loss = result.history.loss.pop().toPrecision(5);
+        await plotPredictionLine();
+        document.getElementById('model-status').innerHTML = 'Trained (unsaved)\n'+ `Training loss: ${last_epoch_loss}\n`+`Validation loss: ${result.history.val_loss.pop().toPrecision(5)}`;
+        //console.log('Training loss: '+last_epoch_loss);
+
+        document.getElementById('test-button').disabled = false;
+        document.getElementById('save-button').disabled = false;
+        document.getElementById("predict-button").removeAttribute("disabled");
+
+      }
+
+      async function train () {
+        // Disable all buttons and update status
+        ["train", "test", "load", "predict", "save"].forEach(id => {
+          document.getElementById(`${id}-button`).setAttribute("disabled", "disabled");
+        });
+        document.getElementById("model-status").innerHTML = "Training...";
+
+        model = createModel();
+        tfvis.show.modelSummary({ name: "Model summary" }, model);
+        const layer = model.getLayer(undefined, 0);
+        tfvis.show.layer({ name: "Layer 1" }, layer);
+        await plotPredictionLine();
+
+        const result = await trainModel(model, train_feat, train_labels);
+        console.log(result);
+        const trainingLoss = result.history.loss.pop();
+        console.log(`Training set loss: ${trainingLoss}`);
+        const validationLoss = result.history.val_loss.pop();
+        console.log(`Validation set loss: ${validationLoss}`);
+
+        document.getElementById("model-status").innerHTML = "Trained (unsaved)\n"
+          + `Loss: ${trainingLoss.toPrecision(5)}\n`
+          + `Validation loss: ${validationLoss.toPrecision(5)}`;
+        document.getElementById("test-button").removeAttribute("disabled");
+        document.getElementById("save-button").removeAttribute("disabled");
+        document.getElementById("predict-button").removeAttribute("disabled");
+      }
+
+
+      async function test(){
+        const lossTensor = model.evaluate(test_feat, test_labels);
+        const loss = await lossTensor.dataSync();
+        document.getElementById('testing-status').innerHTML = 'Test finished\n'+ `Test dataset loss: ${loss.toPrecision(5)}\n`;
+        //console.log('Test dataset loss: '+loss);
+      }
+
+      async function save(){
+        const saveResults = await model.save(`localstorage://${storageID}`);
+        //console.log(saveResults);
+        document.getElementById("model-status").innerHTML = `Trained (saved ${saveResults.modelArtifactsInfo.dateSaved})`;
+      }
+
+      async function load(){
+        const storageKey = `localstorage://${storageID}`;
+        const models = await tf.io.listModels();
+        const modelInfo = models[storageKey];
+
+        if (modelInfo) {
+          model = await tf.loadLayersModel(storageKey);
+
+          tfvis.show.modelSummary({ name: "Model summary" }, model);
+          const layer = model.getLayer(undefined, 0);
+          tfvis.show.layer({ name: "Layer 1" }, layer);
+
+          //await plotPredictionLine();
+
+          document.getElementById("model-status").innerHTML = `Trained (saved ${modelInfo.dateSaved})`;
+          document.getElementById("predict-button").removeAttribute("disabled");
+        }
+        else {
+          alert("Could not load: no saved model found");
+        }
+      }
+
+      async function predict(){
+        const input_size = parseInt(document.getElementById('prediction-input').value);
+        if(isNaN(input_size%2)){
+          alert('Input value is not a valid number');
+        }
+        // else if (input_size < 200) {
+        //   alert("Please enter a value above 200 sqft");
+        // }
+        else{
+          tf.tidy(()=>{
+            const inputTensor = tf.tensor1d([input_size]);
+            const scaled_input = normalize_tensor(inputTensor, scaled_features.min, scaled_features.max );
+            const scaled_prediction_tensor = model.predict(scaled_input.x);
+            //console.log(scaled_prediction_output);
+            const prediction_output_tensor = denormalize(scaled_prediction_tensor, scaled_labels.min, scaled_labels.max);
+            const prediction_output_value = prediction_output_tensor.dataSync()[0]
+            const output_price = (prediction_output_value/1000).toFixed(0)*1000;
+            document.getElementById('prediction-output').innerHTML = `Price : <span style="font-size:2em;">\$${output_price}</span>`;
+          });
+        }
+      }
+
+
+      async function run(){
+        await tf.ready();
+        // Import CSV data
+        const housingData = tf.data.csv('http://127.0.0.1:8080/data/kc_house_data.csv');
+        const data_table = housingData.map(record =>({
+          x: record.sqft_living,
+          y: record.price
+        }));
+
+        points = await data_table.toArray();
+        tf.util.shuffle(points);
+        plot(points, "Square Feet");
+
+        if(points.length %2 !== 0){
+          points.pop();
+        }
+        const features_values = points.map(p=>p.x);
+        const features_tensor = tf.tensor2d(features_values , [features_values.length, 1] );
+        const labels_values = points.map(p=>p.y);
+        const labels_tensor = tf.tensor2d(labels_values , [labels_values.length, 1] );
+        // features_tensor.print();
+        // labels_tensor.print();
+        scaled_features = normalize_tensor(features_tensor);
+        scaled_labels = normalize_tensor(labels_tensor);
+
+        // dispose the raw tensors.
+        features_tensor.dispose();
+        labels_tensor.dispose();
+
+        [train_feat, test_feat] = tf.split(scaled_features.x, 2);
+        [train_labels, test_labels] = tf.split(scaled_labels.x, 2);
+        // train_feat.print();
+        // train_labels.print();
+        document.getElementById('train-button').disabled = false;
+        document.getElementById('load-button').disabled = false;
+        document.getElementById('model-status').innerHTML = 'Loaded Data.\n' + 'Ready for training';
+      }
+
+      run();
+    </script>
+
+
+
+    <div class="container">
+      <div class="row">
+        <div class="col s12 m12 l12 header  teal lighten-1 white-text">
+          <h5 class="center">Linear Regression using TFJS</h5>
+          <div class="row center">
+            <h6 class="header col s12 light">Train a model to predict house price from living space.</h6>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <span class="">Toggle Visor
+            <a class="waves-effect waves-teal btn-flat" id="toggle-button" onclick="toggle_visor();" >
+              <i class="material-icons left blue-text">toggle_on</i></a>
+          </span>
+      </div>
+
+      <div class="row">
+        <div class="col s12 m12 l6 grey lighten-3 ">
+          <div class="center">
+            <i class="large material-icons teal-text ">build</i>
+          </div>
+          <h6 class="center">Train model</h6>
+          <div class="">
+            <p><label>Training status:</label></p>
+              <pre class="grey lighten-4" style="overflow-x: auto"><em id="model-status">Loading data...</em></pre>
+
+              <p><label>Testing status:</label></p>
+              <pre class="grey lighten-4" style="overflow-x: auto"><em id="testing-status">Not yet tested</em></pre>
+
+              <button autocomplete="off" id="train-button" class="waves-effect light-blue waves-light btn" disabled onclick="train()">Train New Model</button>
+              <button autocomplete="off" id="test-button" class="waves-effect light-blue waves-light btn" disabled onclick="test()">Test Model</button>
+          </div>
+          <br>
+
+          <div class="">
+            <button autocomplete="off" id="load-button" class="waves-effect light-blue waves-light btn-small" disabled onclick="load()">Load Model</button>
+            <button autocomplete="off" id="save-button" class="waves-effect light-blue waves-light btn-small" disabled onclick="save()">Save Model</button>
+          </div>
+        </div>
+
+        <div class="col s12 m12 l6 grey lighten-3">
+          <div class="center">
+            <i class="large material-icons teal-text">settings_suggest</i>
+          </div>
+          <h6 class="center">Prediction</h6>
+          <div class="">
+            <label>Square feet of living space: <input type="number" id="prediction-input" placeholder="2000"/></label>
+            <button autocomplete="off" id="predict-button" class="waves-effect light-blue waves-light btn" disabled onclick="predict()">Predict house price</button>
+            <p><strong id="prediction-output"></strong></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </body>
+</html>

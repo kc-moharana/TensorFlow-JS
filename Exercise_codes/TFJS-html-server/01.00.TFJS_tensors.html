@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Tensors</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+  </head>
+  <body>
+    <h1>Tensor core concepts</h1>
+    <p>Open console in Developers tools</p>
+
+    <script type="text/javascript">
+      const x = tf.tensor([2,1,8,3]);
+      x.print();
+
+      // scalars
+      tf.scalar(34).print();
+      const dna = tf.scalar('ATGC')
+      dna.print()
+      // 1D vectors
+      tf.tensor1d([1,4,2,6]).print();
+      // 2D vectors
+      tf.tensor2d([[1,4],[2,6] ]).print();
+
+      // Pass a flat array and specify a shape.
+      tf.tensor2d([1, 2, 3, 4], [2, 2]).print();
+
+      // 3D Pass a flat array and specify a shape.
+      tf.tensor3d([1, 2, 3, 4], [2, 2, 1]).print();
+
+
+      // operations on tensors
+      const ys = tf.tensor2d([2,1,45,10,25,16], [3,2] );
+      ys.print();
+
+      // tf.reshape (x, shape)
+      // - Reshapes a tf.Tensor to a given shape.
+      tf.reshape(ys,[2,3]).print();
+
+      // Change datatype
+      //
+      const flot_x = tf.tensor([1.1, 0.99, 3.21, 5.55]);
+      flot_x.print();
+      tf.cast(flot_x, 'int32').print();
+
+
+      // Generate a new tensor
+      //  tf.linspace (start, stop, num)
+      //  - Return an evenly spaced sequence of numbers over the given interval.
+
+      const m = tf.linspace(0,100, 20); // creates a tensor of length 20 between 0-100;
+      m.print();
+
+
+      // toString (verbose?)
+      // -Returns a human-readable description of the tensor. Useful for logging.
+      console.log(ys.toString(true));
+
+      console.log('=========SPLIT=========');
+      // Split dataset
+      //  tf.split (x, numOrSizeSplits, axis?)
+      const k = tf.tensor2d([1, 2, 3, 4, 5, 6, 7, 8], [2, 4]);
+      k.print();
+      console.log('numOrSizeSplits=2, axis=1');
+      const [a, b] = tf.split(k, 2, 1);
+      a.print();
+      b.print();
+
+      //console.log('numOrSizeSplits=2, axis=2'); // Error
+      //  All values in axis param must be in range [-2, 2) but got axis 2
+      console.log('numOrSizeSplits=2, axis=0');
+      const [o, p] = tf.split(k, 2, 0);
+      o.print();
+      p.print();
+
+      console.log('numOrSizeSplits=[1, 2, 1], axis=1');
+      const [c, d, e] = tf.split(k, [1, 2, 1], 1);
+      c.print();
+      d.print();
+      e.print();
+
+
+      // Transpose matrix
+      console.log('=========Transpose=========');
+      k.transpose().print();
+
+    </script>
+  </body>
+</html>

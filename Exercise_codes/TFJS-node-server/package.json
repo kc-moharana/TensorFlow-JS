@@ -1,0 +1,22 @@
+{
+  "name": "tfjs-node-server",
+  "version": "1.0.0",
+  "description": "This folder contains TensoFlowJS nodeJS implementations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "TensoFlowJS",
+    "NodeJS"
+  ],
+  "author": "kcm.moharana@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow/tfjs": "^3.6.0",
+    "@tensorflow/tfjs-vis": "^1.5.1",
+    "inquirer": "^8.1.0",
+    "materialize-css": "^1.0.0-rc.2"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Visualization- housing data </title>
+    <!-- Import TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis"></script>
+  </head>
+  <body>
+<script type="text/javascript">
+  // using async :
+  // using awaits
+  async function plot_data(datapoints, feature_name){
+    const surface = tfvis.visor().surface({ name: 'Scatterplot '+feature_name+' vs price', tab: 'Charts' });
+    const series = ['Original'];
+    const data = { values: [datapoints], series };
+    const options ={xLabel: feature_name, yLabel: 'Price'};
+    tfvis.render.scatterplot(surface, data, options );
+  }
+
+  async function run(){
+    const house_dataset = tf.data.csv('http://127.0.0.1:8080/data/kc_house_data.csv');
+    const sample_house_dataset = house_dataset.take(10);
+    const dataArray = sample_house_dataset.toArray();
+    console.log(dataArray);
+
+    const points = house_dataset.map(record =>({
+      x : record.sqft_living,
+      y : record.price
+    }) );
+    //console.log(await points.toArray() );
+    plot_data(await points.toArray(), 'Square Feet');
+
+    const features_values = await points.map(p => p.x).toArray();
+    const features_tensor = tf.tensor2d(features_values, [features_values.length,1]);
+
+    const label_values = await points.map(p => p.y).toArray();
+    const label_tensor = tf.tensor2d(label_values, [label_values.length,1]);
+
+    features_tensor.print();
+    label_tensor.print();
+
+  }
+
+  run();
+  // Get a surface
+  //const surface = tfvis.visor().surface({ name: 'Barchart', tab: 'Charts' });
+
+  // Render a barchart on that surface
+  //tfvis.render.barchart(surface, data, {});
+
+
+</script>
+  </body>
+</html>

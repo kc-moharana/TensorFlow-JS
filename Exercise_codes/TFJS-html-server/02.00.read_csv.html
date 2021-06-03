@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Read CSV file</title>
+    <!-- Import TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+  </head>
+  <body>
+    <h1>Reading CSV files </h1>
+    <p>OPen console using develops tools</p>
+    
+    <script type="text/javascript">
+      const house_dataset = tf.data.csv('http://127.0.0.1:8080/data/kc_house_data.csv');
+      const sample_house_dataset = house_dataset.take(10);
+      const dataArray = sample_house_dataset.toArray();
+      console.log(dataArray);
+    </script>
+  </body>
+</html>
