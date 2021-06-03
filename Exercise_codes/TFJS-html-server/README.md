@@ -9,6 +9,6 @@
 ## Data softlink in Windows 10
 - open CMD as administrator
 ```bash
-mklink /D C:\Users\suw169\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\TFJS-html-server\data C:\Users\suw169\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\data
-#symbolic link created for C:\Users\suw169\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\TFJS-html-server\data <<===>> C:\Users\suw169\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\data
+mklink /D C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\TFJS-html-server\data C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\data
+#symbolic link created for C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\TFJS-html-server\data <<===>> C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\data
 ```
