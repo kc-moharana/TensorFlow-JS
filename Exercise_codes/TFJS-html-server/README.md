@@ -8,7 +8,7 @@
 - ICON from: https://icon-icons.com/icon/tensorflow-logo/168671
 ## Data softlink in Windows 10
 - open CMD as administrator
-```bash
+```batch
 mklink /D C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\TFJS-html-server\data C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\data
 #symbolic link created for C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\TFJS-html-server\data <<===>> C:\Users\kanhu\Documents\GIT_repos\TensorFlow-JS\Exercise_codes\data
 ```
